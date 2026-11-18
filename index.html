@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>拼豆图纸工作台 · VOX → MARD</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23F5F2EA'/><rect x='6' y='6' width='9' height='9' rx='2' fill='%23BF3F26'/><rect x='17' y='17' width='9' height='9' rx='2' fill='%23191813'/></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --paper: #F5F2EA;
+  --paper-2: #F0ECE2;
+  --stage: #E7E1D2;
+  --ink: #1A1913;
+  --ink-2: #5A5548;
+  --ink-3: #8C8674;
+  --line: #D9D2C1;
+  --line-2: #C6BCA6;
+  --accent: #BF3F26;
+  --accent-soft: #F0DCD4;
+  --font: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+  --mono: "Consolas", "Menlo", monospace;
+}
+html { height: 100%; }
+body {
+  min-height: 100%;
+  font-family: var(--font);
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image: linear-gradient(rgba(26,25,19,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(26,25,19,.035) 1px, transparent 1px);
+  background-size: 26px 26px;
+  -webkit-font-smoothing: antialiased;
+}
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  height: 62px; padding: 0 22px;
+  background: rgba(245,242,234,.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.brand h1 { font-size: 16px; font-weight: 600; letter-spacing: .14em; line-height: 1; }
+.brand p { font-size: 9.5px; letter-spacing: .2em; color: var(--ink-3); margin-top: 5px; text-transform: uppercase; }
+.top-right { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.chip {
+  max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--mono); font-size: 11px; color: var(--ink-3);
+  border: 1px solid var(--line); border-radius: 2px; padding: 5px 8px;
+  background: rgba(255,255,255,.45);
+}
+.chip.on { color: var(--ink); border-color: var(--line-2); background: #fff; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-family: var(--font); font-size: 12px; letter-spacing: .02em;
+  border: 1px solid var(--line-2); background: transparent; color: var(--ink);
+  padding: 7px 13px; border-radius: 2px; cursor: pointer;
+  transition: background .16s, color .16s, border-color .16s, transform .16s;
+}
+.btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.btn:active { transform: translateY(1px); }
+.btn-sm { padding: 5px 10px; font-size: 11.5px; }
+.btn-solid { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.btn-solid:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+#reloadBtn { display: none; }
+
+.landing {
+  min-height: calc(100vh - 62px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 28px; padding: 48px 24px 64px;
+}
+.dropcard {
+  position: relative; width: min(680px, 100%); background: #fff;
+  border: 1px solid var(--line-2); border-radius: 3px; cursor: pointer;
+  box-shadow: 0 26px 60px -38px rgba(26,25,19,.6);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.dropcard:hover { transform: translateY(-3px); box-shadow: 0 34px 70px -36px rgba(26,25,19,.65); border-color: var(--ink); }
+.dropcard.over { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), 0 26px 60px -34px rgba(26,25,19,.5); }
+.dropcard::after { content: ""; position: absolute; inset: 9px; border: 1px dashed var(--line); pointer-events: none; }
+.drop-inner { padding: 54px 40px 38px; text-align: center; }
+.motif { display: block; margin: 0 auto 24px; }
+.drop-inner h2 { font-size: 23px; font-weight: 600; letter-spacing: .04em; }
+.drop-inner p { font-size: 13px; color: var(--ink-2); margin-top: 10px; line-height: 1.8; letter-spacing: .02em; }
+.drop-actions { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 28px; flex-wrap: wrap; }
+.drop-actions .btn { padding: 9px 18px; }
+.linkbtn {
+  font-family: var(--font); font-size: 12px; color: var(--ink-2); background: none; border: none;
+  border-bottom: 1px solid var(--line-2); padding: 0 0 3px; cursor: pointer; transition: color .16s, border-color .16s;
+}
+.linkbtn:hover { color: var(--accent); border-color: var(--accent); }
+.drop-foot {
+  margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--line);
+  font-family: var(--mono); font-size: 10px; letter-spacing: .16em; color: var(--ink-3); text-transform: uppercase;
+}
+.steps { display: flex; gap: 36px; flex-wrap: wrap; justify-content: center; }
+.step { display: flex; align-items: baseline; gap: 9px; }
+.step b { font-family: var(--mono); font-size: 10.5px; color: var(--accent); letter-spacing: .08em; }
+.step span { font-size: 12px; color: var(--ink-2); letter-spacing: .04em; }
+
+.workspace { display: none; }
+.workspace.active { display: grid; grid-template-columns: minmax(0, 1fr) 348px; height: calc(100vh - 62px); }
+.stage { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 16px 18px 12px; gap: 12px; }
+.stage-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sep { width: 1px; height: 20px; background: var(--line); margin: 0 3px; }
+.sw { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; user-select: none; }
+.sw input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+.sw .track {
+  width: 32px; height: 17px; border-radius: 9px; background: #DCD5C4;
+  position: relative; flex: none; transition: background .2s;
+}
+.sw .track::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px;
+  border-radius: 50%; background: #fff; transition: transform .2s;
+}
+.sw input:checked + .track { background: var(--accent); }
+.sw input:checked + .track::after { transform: translateX(15px); }
+.sw .txt { font-size: 12px; color: var(--ink-2); letter-spacing: .02em; }
+.sw:hover .txt { color: var(--ink); }
+.zoomval { font-family: var(--mono); font-size: 11px; color: var(--ink-3); min-width: 40px; text-align: right; letter-spacing: .04em; }
+.stats { display: flex; border: 1px solid var(--line); border-radius: 2px; background: rgba(255,255,255,.55); }
+.stat { padding: 6px 14px; text-align: center; border-right: 1px solid var(--line); min-width: 66px; }
+.stat:last-child { border-right: none; }
+.stat .value { font-family: var(--mono); font-size: 13px; font-weight: 600; line-height: 1.3; }
+.stat .label { font-size: 9px; letter-spacing: .16em; color: var(--ink-3); margin-top: 3px; }
+
+.canvas-wrap {
+  flex: 1; min-height: 0; overflow: auto; padding: 20px; position: relative;
+  border: 1px solid var(--line); border-radius: 2px;
+  background-color: var(--stage);
+  background-image: linear-gradient(rgba(26,25,19,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(26,25,19,.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+  cursor: grab; user-select: none;
+}
+.canvas-wrap.dragging { cursor: grabbing; }
+.bp-viewport { width: max-content; min-width: 100%; display: flex; justify-content: center; align-items: flex-start; }
+.bp-viewport svg { display: block; background: #fff; box-shadow: 0 16px 38px -24px rgba(26,25,19,.8); }
+#bpViewport.hide-labels text.lbl { display: none; }
+.stage-foot { display: flex; gap: 16px; flex-wrap: wrap; font-family: var(--mono); font-size: 11px; color: var(--ink-3); letter-spacing: .04em; }
+.stage-foot span { color: var(--ink-2); }
+
+.side { display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--line); background: var(--paper-2); }
+.side-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 18px 10px; display: flex; flex-direction: column; gap: 22px; }
+.sec h3 {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  font-size: 10px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line);
+}
+.sec h3 em { font-style: normal; font-family: var(--mono); font-size: 9.5px; letter-spacing: .06em; }
+.field { margin-bottom: 14px; }
+.field .row { display: flex; align-items: baseline; justify-content: space-between; font-size: 12px; color: var(--ink-2); margin-bottom: 7px; }
+.field .row b { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--ink); }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 2px; background: var(--line-2); border-radius: 2px; outline: none; cursor: pointer; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px; border-radius: 2px; background: var(--ink); border: 1px solid var(--ink); }
+input[type=range]:hover::-webkit-slider-thumb { background: var(--accent); border-color: var(--accent); }
+.editor-head { display: flex; gap: 8px; margin-bottom: 12px; }
+.editor-list { display: flex; flex-direction: column; gap: 1px; }
+.mrow {
+  display: grid; grid-template-columns: 12px 28px 12px 12px 58px 26px minmax(0,1fr) 40px;
+  gap: 6px; align-items: center; padding: 5px 6px;
+  background: rgba(255,255,255,.6); transition: background .15s;
+}
+.mrow:hover { background: #fff; }
+.mrow + .mrow { border-top: 1px solid rgba(217,210,193,.75); }
+.swatch { width: 12px; height: 12px; border: 1px solid rgba(26,25,19,.2); border-radius: 1px; }
+.mrow .idx { font-family: var(--mono); font-size: 10.5px; text-align: center; }
+.mrow .arrow { font-size: 10px; color: var(--ink-3); text-align: center; }
+.mrow select { width: 100%; font-family: var(--mono); font-size: 10.5px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 1px; padding: 2px 0; }
+.mrow input[type=color] { width: 26px; height: 20px; padding: 1px; background: #fff; border: 1px solid var(--line); border-radius: 1px; cursor: pointer; }
+.mrow input.id-input { width: 100%; min-width: 0; font-family: var(--mono); font-size: 10.5px; text-align: center; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 1px; padding: 2px 4px; }
+.mrow .count { font-family: var(--mono); font-size: 9.5px; color: var(--ink-3); text-align: right; }
+.side-foot { padding: 14px 18px 18px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.side-foot .btn { width: 100%; }
+.side-foot .btn-solid { padding: 11px; font-size: 12.5px; letter-spacing: .1em; }
+.side-foot small { font-family: var(--mono); font-size: 9.5px; color: var(--ink-3); text-align: center; letter-spacing: .04em; margin-top: 2px; }
+
+.loading {
+  display: none; position: fixed; inset: 0; z-index: 40;
+  align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+  background: rgba(245,242,234,.86); backdrop-filter: blur(4px);
+  font-size: 12.5px; letter-spacing: .1em; color: var(--ink-2);
+}
+.loading.active { display: flex; }
+.spinner { width: 26px; height: 26px; border: 2px solid var(--line-2); border-top-color: var(--accent); border-radius: 50%; animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.toast {
+  position: fixed; left: 50%; bottom: 28px; z-index: 50;
+  transform: translate(-50%, 12px); opacity: 0; pointer-events: none;
+  background: var(--ink); color: var(--paper); font-size: 12px; padding: 9px 16px; border-radius: 2px;
+  transition: opacity .22s, transform .22s;
+}
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 1180px) {
+  .workspace.active { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .side { border-left: none; border-top: 1px solid var(--line); }
+  .canvas-wrap { max-height: 62vh; }
+}
+</style>
+</head>
+
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+      <rect x="0" y="0" width="7" height="7" rx="1.5" fill="#BF3F26"/>
+      <rect x="9" y="0" width="7" height="7" rx="1.5" fill="#1A1913"/>
+      <rect x="18" y="0" width="7" height="7" rx="1.5" fill="#D9D2C1"/>
+      <rect x="0" y="9" width="7" height="7" rx="1.5" fill="#D9D2C1"/>
+      <rect x="9" y="9" width="7" height="7" rx="1.5" fill="#BF3F26"/>
+      <rect x="18" y="9" width="7" height="7" rx="1.5" fill="#1A1913"/>
+      <rect x="0" y="18" width="7" height="7" rx="1.5" fill="#1A1913"/>
+      <rect x="9" y="18" width="7" height="7" rx="1.5" fill="#D9D2C1"/>
+      <rect x="18" y="18" width="7" height="7" rx="1.5" fill="#BF3F26"/>
+    </svg>
+    <div>
+      <h1>拼豆图纸</h1>
+      <p>VOX → MARD WORKBENCH</p>
+    </div>
+  </div>
+  <div class="top-right">
+    <span class="chip" id="fileChip">未载入文件</span>
+    <button class="btn btn-sm" id="reloadBtn" onclick="document.getElementById('fileInput').click()">换文件</button>
+  </div>
+</header>
+
+<section class="landing" id="landing">
+  <div class="dropcard" id="uploadZone">
+    <div class="drop-inner">
+      <svg class="motif" width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
+        <rect x="2" y="2" width="14" height="14" rx="3" fill="#BF3F26"/>
+        <rect x="20" y="2" width="14" height="14" rx="3" fill="#1A1913"/>
+        <rect x="38" y="2" width="14" height="14" rx="3" fill="#D9D2C1"/>
+        <rect x="2" y="20" width="14" height="14" rx="3" fill="#D9D2C1"/>
+        <rect x="20" y="20" width="14" height="14" rx="3" fill="#BF3F26"/>
+        <rect x="38" y="20" width="14" height="14" rx="3" fill="#1A1913"/>
+        <rect x="2" y="38" width="14" height="14" rx="3" fill="#1A1913"/>
+        <rect x="20" y="38" width="14" height="14" rx="3" fill="#D9D2C1"/>
+        <rect x="38" y="38" width="14" height="14" rx="3" fill="#BF3F26"/>
+      </svg>
+      <h2>把 .vox 拖到这里</h2>
+      <p>自动拆件 · 按最薄轴拍平 · 统一排版 · 匹配 MARD 色号</p>
+      <div class="drop-actions">
+        <button class="btn btn-solid" onclick="document.getElementById('fileInput').click()">选择文件</button>
+        <button class="linkbtn" onclick="loadDemo()">没有文件？看示例模型 →</button>
+      </div>
+      <div class="drop-foot">MAGICAVOXEL .VOX · 输出 SVG 矢量 / PNG 图纸</div>
+    </div>
+    <input type="file" id="fileInput" accept=".vox" hidden>
+  </div>
+  <div class="steps">
+    <div class="step"><b>01</b><span>按连通拆出零件</span></div>
+    <div class="step"><b>02</b><span>最薄轴拍平成面</span></div>
+    <div class="step"><b>03</b><span>装箱排版 + 配色</span></div>
+  </div>
+</section>
+
+<main class="workspace" id="mainLayout">
+  <div class="stage">
+    <div class="stage-head">
+      <div class="toolbar">
+        <label class="sw"><input type="checkbox" checked onchange="toggleGrid5()"><span class="track"></span><span class="txt">5 格线</span></label>
+        <label class="sw"><input type="checkbox" checked onchange="toggleLabels()"><span class="track"></span><span class="txt">色号</span></label>
+        <label class="sw"><input type="checkbox" checked onchange="togglePartNum()"><span class="track"></span><span class="txt">零件号</span></label>
+        <span class="sep"></span>
+        <button class="btn btn-sm" onclick="zoomOut()">−</button>
+        <button class="btn btn-sm" onclick="zoomIn()">+</button>
+        <button class="btn btn-sm" onclick="fitView()">适应</button>
+        <span class="zoomval" id="zoomVal">100%</span>
+      </div>
+      <div class="stats" id="statsBar">
+        <div class="stat"><div class="value" id="statParts">0</div><div class="label">零件</div></div>
+        <div class="stat"><div class="value" id="statVoxels">0</div><div class="label">总珠子</div></div>
+        <div class="stat"><div class="value" id="statColors">0</div><div class="label">颜色</div></div>
+        <div class="stat"><div class="value" id="statCanvas">0×0</div><div class="label">画布格</div></div>
+      </div>
+    </div>
+    <div class="canvas-wrap" id="canvasWrap"><div class="bp-viewport" id="bpViewport"></div></div>
+    <div class="stage-foot" id="canvasInfo"></div>
+  </div>
+
+  <aside class="side">
+    <div class="side-scroll">
+      <section class="sec">
+        <h3>图纸设置</h3>
+        <div class="field">
+          <div class="row"><span>格子大小</span><b><span id="cellSizeVal">22</span> px</b></div>
+          <input type="range" id="cellSize" min="12" max="40" value="22" oninput="updateCellSize()">
+        </div>
+        <div class="field">
+          <div class="row"><span>零件间距</span><b><span id="gapVal">2</span> 格</b></div>
+          <input type="range" id="gapSize" min="1" max="6" value="2" oninput="updateGapSize()">
+        </div>
+      </section>
+
+      <section class="sec">
+        <h3>颜色映射 <em>原始 → MARD</em></h3>
+        <div class="editor-head">
+          <button class="btn btn-sm btn-solid" onclick="autoMatchAll()">自动匹配</button>
+          <button class="btn btn-sm" onclick="resetMapping()">重置</button>
+        </div>
+        <div class="editor-list" id="colorEditor"></div>
+      </section>
+    </div>
+    <div class="side-foot">
+      <button class="btn" onclick="exportSVG()">导出 SVG 矢量图</button>
+      <button class="btn btn-solid" onclick="exportPNG(1)">导出 PNG 图纸</button>
+      <button class="btn" onclick="exportPNG(4)">导出高清 PNG 4×</button>
+      <small>滚轮缩放 · 拖拽平移 · 双击适应</small>
+    </div>
+  </aside>
+</main>
+
+<div class="loading" id="loading"><div class="spinner"></div><div>正在解析模型…</div></div>
+<div class="toast" id="toast"></div>
+<script>
+const MARD_PALETTE = {
+    'A1': [255,249,211],
+    'A2': [253,254,218],
+    'A3': [254,253,137],
+    'A4': [255,240,90],
+    'A5': [255,227,77],
+    'A6': [255,195,66],
+    'A7': [255,146,51],
+    'A8': [247,223,67],
+    'A9': [255,167,113],
+    'A10': [255,167,73],
+    'A11': [255,217,148],
+    'A12': [255,190,159],
+    'A13': [255,204,66],
+    'A14': [250,99,77],
+    'A15': [255,254,76],
+    'A16': [255,254,185],
+    'A17': [255,226,108],
+    'A18': [255,208,159],
+    'A19': [249,128,118],
+    'A20': [255,216,79],
+    'A21': [255,226,147],
+    'A22': [255,248,137],
+    'A23': [247,225,207],
+    'A24': [247,255,218],
+    'A25': [255,222,94],
+    'A26': [255,196,34],
+    'B1': [224,237,47],
+    'B2': [118,249,77],
+    'B3': [181,254,188],
+    'B4': [101,247,56],
+    'B5': [78,222,101],
+    'B6': [116,243,190],
+    'B7': [0,165,133],
+    'B8': [8,163,69],
+    'B9': [31,101,61],
+    'B10': [123,211,186],
+    'B11': [92,113,43],
+    'B12': [0,146,106],
+    'B13': [200,232,125],
+    'B14': [172,232,75],
+    'B15': [14,102,23],
+    'B16': [214,249,177],
+    'B17': [190,213,87],
+    'B18': [215,237,47],
+    'B19': [26,183,136],
+    'B20': [213,249,220],
+    'B21': [6,152,124],
+    'B22': [0,67,66],
+    'B23': [52,75,17],
+    'B24': [233,241,187],
+    'B25': [93,138,108],
+    'B26': [154,135,65],
+    'B27': [189,205,153],
+    'B28': [168,243,195],
+    'B29': [204,225,82],
+    'B30': [243,255,191],
+    'B31': [205,240,190],
+    'B32': [188,227,82],
+    'C1': [228,255,241],
+    'C2': [207,250,250],
+    'C3': [187,235,253],
+    'C4': [115,212,245],
+    'C5': [12,179,239],
+    'C6': [117,191,247],
+    'C7': [34,146,232],
+    'C8': [18,91,192],
+    'C9': [14,66,205],
+    'C10': [78,191,225],
+    'C11': [8,197,208],
+    'C12': [8,70,90],
+    'C13': [204,231,253],
+    'C14': [222,251,252],
+    'C15': [37,210,210],
+    'C16': [35,89,143],
+    'C17': [101,216,236],
+    'C18': [28,62,66],
+    'C19': [0,149,159],
+    'C20': [44,133,201],
+    'C21': [221,239,251],
+    'C22': [137,207,214],
+    'C23': [207,236,243],
+    'C24': [151,208,253],
+    'C25': [184,244,235],
+    'C26': [59,173,214],
+    'C27': [230,243,253],
+    'C28': [219,234,253],
+    'C29': [49,71,132],
+    'D1': [156,183,248],
+    'D2': [132,141,220],
+    'D3': [19,59,166],
+    'D4': [4,57,122],
+    'D5': [173,82,181],
+    'D6': [171,122,222],
+    'D7': [123,66,169],
+    'D8': [225,210,254],
+    'D9': [212,184,246],
+    'D10': [53,26,79],
+    'D11': [179,186,237],
+    'D12': [228,170,231],
+    'D13': [203,9,164],
+    'D14': [151,59,165],
+    'D15': [47,31,140],
+    'D16': [230,236,253],
+    'D17': [211,220,250],
+    'D18': [159,95,190],
+    'D19': [230,213,228],
+    'D20': [153,80,182],
+    'D21': [154,53,156],
+    'D22': [76,84,178],
+    'D23': [240,233,254],
+    'D24': [118,133,227],
+    'D25': [70,77,198],
+    'D26': [222,193,246],
+    'E1': [255,223,218],
+    'E2': [255,207,230],
+    'E3': [242,176,209],
+    'E4': [237,126,174],
+    'E5': [229,88,156],
+    'E6': [255,71,127],
+    'E7': [155,3,86],
+    'E8': [255,228,233],
+    'E9': [227,118,199],
+    'E10': [178,22,96],
+    'E11': [255,233,225],
+    'E12': [255,161,206],
+    'E13': [155,4,110],
+    'E14': [255,213,191],
+    'E15': [255,216,218],
+    'E16': [255,245,237],
+    'E17': [248,229,239],
+    'E18': [251,212,225],
+    'E19': [247,217,240],
+    'E20': [235,210,224],
+    'E21': [210,175,179],
+    'E22': [195,143,171],
+    'E23': [146,121,139],
+    'E24': [255,246,251],
+    'F1': [253,149,123],
+    'F2': [252,61,70],
+    'F3': [247,73,65],
+    'F4': [252,40,60],
+    'F5': [231,0,47],
+    'F6': [148,54,48],
+    'F7': [151,25,55],
+    'F8': [188,0,40],
+    'F9': [226,103,122],
+    'F10': [138,69,38],
+    'F11': [90,33,33],
+    'F12': [253,78,106],
+    'F13': [243,87,68],
+    'F14': [255,169,173],
+    'F15': [211,0,34],
+    'F16': [254,194,166],
+    'F17': [230,156,121],
+    'F18': [211,124,70],
+    'F19': [193,68,74],
+    'F20': [205,147,145],
+    'F21': [247,180,198],
+    'F22': [253,192,208],
+    'F23': [246,126,102],
+    'F24': [230,152,170],
+    'F25': [229,75,79],
+    'G1': [255,234,204],
+    'G2': [255,216,188],
+    'G3': [243,202,163],
+    'G4': [224,178,129],
+    'G5': [232,156,88],
+    'G6': [224,144,72],
+    'G7': [162,110,73],
+    'G8': [113,61,47],
+    'G9': [238,189,139],
+    'G10': [191,137,77],
+    'G11': [221,207,163],
+    'G12': [235,204,146],
+    'G13': [181,117,79],
+    'G14': [139,100,78],
+    'G15': [248,245,224],
+    'G16': [235,218,197],
+    'G17': [77,61,36],
+    'G18': [251,240,220],
+    'G19': [210,146,82],
+    'G20': [164,87,53],
+    'G21': [195,144,108],
+    'H1': [252,250,253],
+    'H2': [255,254,254],
+    'H3': [186,186,186],
+    'H4': [136,131,138],
+    'H5': [71,69,76],
+    'H6': [46,42,46],
+    'H7': [1,1,1],
+    'H8': [246,237,240],
+    'H9': [242,241,238],
+    'H10': [237,234,235],
+    'H11': [203,202,191],
+    'H12': [250,251,237],
+    'H13': [244,235,208],
+    'H14': [214,223,221],
+    'H15': [151,165,166],
+    'H16': [52,44,43],
+    'H17': [240,240,240],
+    'H18': [246,246,244],
+    'H19': [248,246,240],
+    'H20': [149,161,162],
+    'H21': [254,253,245],
+    'H22': [236,236,236],
+    'H23': [178,184,165],
+    'M1': [206,215,203],
+    'M2': [137,162,133],
+    'M3': [104,124,126],
+    'M4': [226,209,186],
+    'M5': [207,203,168],
+    'M6': [175,166,128],
+    'M7': [179,163,149],
+    'M8': [182,152,144],
+    'M9': [164,134,101],
+    'M10': [196,177,186],
+    'M11': [158,116,146],
+    'M12': [99,70,71],
+    'M13': [208,143,100],
+    'M14': [198,114,96],
+    'M15': [116,124,121],
+};
+const TRANSPARENT_CODES = new Set(['H1']);
+
+function naturalSort(a, b) {
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+}
+const MARD_CODES = Object.keys(MARD_PALETTE).sort(naturalSort);
+
+let palette = [];
+let flatComponents = [];
+let colorMapping = {};
+let showGrid5 = true;
+let showLabels = true;
+let showPartNum = true;
+let zoom = 1.0;
+let cellSize = 22;
+let gapSize = 2;
+let exportScale = 1;
+
+function parseVox(arrayBuffer) {
+    const data = new Uint8Array(arrayBuffer);
+    const view = new DataView(arrayBuffer);
+    if (String.fromCharCode(...data.slice(0,4)) !== 'VOX ') throw new Error('不是 VOX 文件');
+    let pos = 8, models = [], pal = null, allVoxels = [];
+    function readChunk(atPos) {
+        if (atPos + 12 > data.length) return atPos;
+        const id = String.fromCharCode(...data.slice(atPos, atPos+4));
+        const size = view.getUint32(atPos+4, true);
+        const childSize = view.getUint32(atPos+8, true);
+        atPos += 12;
+        const chunkData = data.slice(atPos, atPos + size);
+        atPos += size;
+        if (id === 'SIZE') {
+            const cv = new DataView(chunkData.buffer, chunkData.byteOffset, chunkData.byteLength);
+            models.push({size:[cv.getUint32(0,true),cv.getUint32(4,true),cv.getUint32(8,true)], voxels:[]});
+        } else if (id === 'XYZI') {
+            const num = new DataView(chunkData.buffer, chunkData.byteOffset, 4).getUint32(0, true);
+            const voxels = [];
+            for (let i = 0; i < num; i++) voxels.push([chunkData[4+i*4], chunkData[4+i*4+1], chunkData[4+i*4+2], chunkData[4+i*4+3]]);
+            if (models.length > 0) models[models.length-1].voxels = voxels;
+            allVoxels = allVoxels.concat(voxels);
+        } else if (id === 'RGBA') {
+            pal = [];
+            for (let i = 0; i < 256; i++) pal.push([chunkData[i*4], chunkData[i*4+1], chunkData[i*4+2], chunkData[i*4+3]]);
+        }
+        let childPos = atPos;
+        const childEnd = atPos + childSize;
+        while (childPos < childEnd && childPos + 12 <= data.length) childPos = readChunk(childPos);
+        return Math.max(atPos + childSize, childPos);
+    }
+    while (pos < data.length) pos = readChunk(pos);
+    if (!pal) { pal = []; for (let i = 0; i < 256; i++) pal.push([i, i, i, 255]); }
+    if (models.length === 0 && allVoxels.length > 0) {
+        const xs = allVoxels.map(v=>v[0]), ys = allVoxels.map(v=>v[1]), zs = allVoxels.map(v=>v[2]);
+        models.push({size:[Math.max(...xs)+1, Math.max(...ys)+1, Math.max(...zs)+1], voxels: allVoxels});
+    }
+    return {models, palette: pal};
+}
+
+function findComponents(voxels) {
+    if (!voxels || voxels.length === 0) return [];
+    const voxelMap = new Map();
+    for (const [x,y,z,c] of voxels) voxelMap.set(`${x},${y},${z}`, c);
+    const visited = new Set(), components = [];
+    const dirs = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+    for (const key of voxelMap.keys()) {
+        if (visited.has(key)) continue;
+        const comp = [], queue = [key];
+        visited.add(key);
+        while (queue.length) {
+            const [cx,cy,cz] = queue.shift().split(',').map(Number);
+            comp.push([cx,cy,cz,voxelMap.get(`${cx},${cy},${cz}`)]);
+            for (const [dx,dy,dz] of dirs) {
+                const nk = `${cx+dx},${cy+dy},${cz+dz}`;
+                if (voxelMap.has(nk) && !visited.has(nk)) { visited.add(nk); queue.push(nk); }
+            }
+        }
+        components.push(comp);
+    }
+    return components.sort((a,b)=>b.length-a.length);
+}
+
+function flattenComponent(comp) {
+    const xs = comp.map(v=>v[0]), ys = comp.map(v=>v[1]), zs = comp.map(v=>v[2]);
+    const xr = Math.max(...xs)-Math.min(...xs)+1, yr = Math.max(...ys)-Math.min(...ys)+1, zr = Math.max(...zs)-Math.min(...zs)+1;
+    const minR = Math.min(xr, yr, zr);
+    let orient = 'XY', flat = [];
+    if (minR === zr) { orient = 'XY'; flat = comp.map(([x,y,z,c])=>[x,y,c]); }
+    else if (minR === yr) { orient = 'XZ'; flat = comp.map(([x,y,z,c])=>[x,z,c]); }
+    else { orient = 'YZ'; flat = comp.map(([x,y,z,c])=>[y,z,c]); }
+    const fxs = flat.map(v=>v[0]), fys = flat.map(v=>v[1]);
+    const mfx = Math.min(...fxs), mfy = Math.min(...fys);
+    flat = flat.map(([x,y,c])=>[x-mfx, y-mfy, c]);
+    return {flat, orient, origSize:[xr,yr,zr]};
+}
+
+function packLayout(components, gap) {
+    const items = components.map((fc, idx) => {
+        const w = Math.max(...fc.flat.map(v=>v[0])) + 1;
+        const h = Math.max(...fc.flat.map(v=>v[1])) + 1;
+        return { idx, flat: fc.flat, w, h, area: w * h };
+    });
+    items.sort((a,b)=>b.area - a.area);
+    const totalArea = items.reduce((s, it) => s + (it.w + gap) * (it.h + gap), 0);
+    const targetSide = Math.ceil(Math.sqrt(totalArea) * 1.1);
+    const rows = [];
+    let currentRow = [], rowWidth = 0, rowHeight = 0;
+    for (const item of items) {
+        const itemW = item.w + gap;
+        if (rowWidth + itemW > targetSide && currentRow.length > 0) {
+            rows.push({items: currentRow, height: rowHeight});
+            currentRow = [item]; rowWidth = itemW; rowHeight = item.h + gap;
+        } else {
+            currentRow.push(item);
+            rowWidth += itemW;
+            rowHeight = Math.max(rowHeight, item.h + gap);
+        }
+    }
+    if (currentRow.length > 0) rows.push({items: currentRow, height: rowHeight});
+    let cy = 0;
+    for (const row of rows) {
+        let cx = 0;
+        for (const item of row.items) { item.layoutX = cx; item.layoutY = cy; cx += item.w + gap; }
+        cy += row.height;
+    }
+    const maxX = items.length > 0 ? Math.max(...items.map(it => it.layoutX + it.w)) : 0;
+    const maxY = items.length > 0 ? Math.max(...items.map(it => it.layoutY + it.h)) : 0;
+    return {items, canvasW: maxX, canvasH: maxY};
+}
+
+function getOriginalColor(cidx) {
+    if (cidx >= 1 && cidx <= 255) { const [r,g,b,a] = palette[cidx - 1]; return [r,g,b]; }
+    return [128,128,128];
+}
+function rgbToHex(r,g,b) { return '#' + [r,g,b].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+function hexToRgb(hex) { const m=/^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(hex); return m?[parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)]:[0,0,0]; }
+function colorDist(c1,c2) { return Math.sqrt((c1[0]-c2[0])**2+(c1[1]-c2[1])**2+(c1[2]-c2[2])**2); }
+
+function findNearestDouhua(r,g,b) {
+    let bestCode = 'A1', bestDist = Infinity, bestRGB = MARD_PALETTE['A1'];
+    if (!bestRGB) { console.error('A1 not found in palette'); return {code:'A1', rgb:[255,249,211]}; }
+    for (const [code, rgb] of Object.entries(MARD_PALETTE)) {
+        if (!rgb || !Array.isArray(rgb) || rgb.length < 3) continue;
+        const d = colorDist([r,g,b], rgb);
+        if (d < bestDist) { bestDist = d; bestCode = code; bestRGB = rgb; }
+    }
+    return { code: bestCode, rgb: bestRGB, dist: bestDist };
+}
+
+function initColorMapping() {
+    colorMapping = {};
+    const used = new Set();
+    for (const fc of flatComponents) {
+        for (const [x,y,cidx] of fc.flat) { if (cidx >= 1 && cidx <= 255) used.add(cidx); }
+    }
+    for (const cidx of used) {
+        const [r,g,b] = getOriginalColor(cidx);
+        const hex = rgbToHex(r,g,b);
+        colorMapping[cidx] = { original: [r,g,b], originalHex: hex, mappedCode: null, mappedRGB: [r,g,b], mappedHex: hex, count: 0 };
+    }
+    for (const fc of flatComponents) {
+        for (const [x,y,cidx] of fc.flat) { if (colorMapping[cidx]) colorMapping[cidx].count++; }
+    }
+}
+
+function autoMatchAll() {
+    for (const cidx in colorMapping) {
+        const cm = colorMapping[cidx];
+        const nearest = findNearestDouhua(cm.original[0], cm.original[1], cm.original[2]);
+        cm.mappedCode = nearest.code;
+        cm.mappedRGB = nearest.rgb;
+        cm.mappedHex = rgbToHex(...nearest.rgb);
+    }
+    drawBlueprint(); updateColorEditor();
+}
+
+function resetMapping() {
+    for (const cidx in colorMapping) {
+        const cm = colorMapping[cidx];
+        cm.mappedCode = null; cm.mappedRGB = [...cm.original]; cm.mappedHex = cm.originalHex;
+    }
+    drawBlueprint(); updateColorEditor();
+}
+
+function updateMapping(cidx, code, id) {
+    const cm = colorMapping[cidx];
+    if (!cm) return;
+    if (code && MARD_PALETTE[code]) {
+        cm.mappedCode = code;
+        cm.mappedRGB = MARD_PALETTE[code];
+        cm.mappedHex = rgbToHex(...MARD_PALETTE[code]);
+    }
+    if (id !== undefined && id !== null && id !== '') {
+        cm.mappedCode = id;
+    }
+    drawBlueprint();
+}
+
+function setCustomColor(cidx, hex) {
+    const cm = colorMapping[cidx];
+    if (!cm) return;
+    const rgb = hexToRgb(hex);
+    cm.mappedCode = '自定义';
+    cm.mappedRGB = rgb;
+    cm.mappedHex = hex;
+    drawBlueprint();
+}
+
+/* ===================== 图纸渲染（SVG 矢量） ===================== */
+let lastMeta = { canvasW: 0, canvasH: 0, beads: 0, colors: 0, parts: 0 };
+
+function canvasCounts(items) {
+    const counts = {}, codeMap = {};
+    for (const item of items) {
+        for (const [x, y, cidx] of item.flat) {
+            const cm = colorMapping[cidx];
+            const [mr, mg, mb] = cm ? cm.mappedRGB : [200, 200, 200];
+            const code = cm ? (cm.mappedCode || '?') : '?';
+            const isT = TRANSPARENT_CODES.has(code);
+            const key = isT ? 'transparent' : `${mr},${mg},${mb}`;
+            counts[key] = (counts[key] || 0) + 1;
+            if (cm && cm.mappedCode) codeMap[key] = cm.mappedCode;
+        }
+    }
+    return { counts, codeMap };
+}
+
+function buildBlueprintSVG(scale) {
+    scale = scale || 1;
+    if (flatComponents.length === 0) return '';
+    const cs = Math.max(6, cellSize);
+    const gap = parseInt(gapSize, 10) || 2;
+    const packed = packLayout(flatComponents, gap);
+    const items = packed.items, canvasW = packed.canvasW, canvasH = packed.canvasH;
+    const { counts, codeMap } = canvasCounts(items);
+    const colorList = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const totalBeads = items.reduce((s, it) => s + it.flat.length, 0);
+    lastMeta = { canvasW, canvasH, beads: totalBeads, colors: colorList.length, parts: items.length };
+
+    const pad = 30, headH = 68, itemW = 94, rowH = 26, sw = 14;
+    const gridW = canvasW * cs, gridH = canvasH * cs;
+    let cols = Math.max(1, Math.floor(Math.min(gridW, 1180) / itemW));
+    cols = Math.max(1, Math.min(cols, colorList.length || 1));
+    const rows = Math.max(1, Math.ceil(colorList.length / cols));
+    const contentW = Math.max(gridW, cols * itemW);
+    const W = Math.round(contentW + pad * 2 + 10);
+    const H = Math.round(headH + gridH + 36 + rows * rowH + 26);
+    const ink = '#1A1913', ink3 = '#8C8674';
+    const q = Math.max(3, Math.floor(cs / 3));
+
+    const o = [];
+    o.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${Math.round(W * scale)}" height="${Math.round(H * scale)}" shape-rendering="geometricPrecision">`);
+    o.push(`<style>.f{font-family:'Microsoft YaHei','Segoe UI',system-ui,sans-serif}.m{font-family:Consolas,'Courier New',monospace}</style>`);
+    o.push(`<defs><pattern id="chk" width="${q * 2}" height="${q * 2}" patternUnits="userSpaceOnUse"><rect x="0" y="0" width="${q * 2}" height="${q * 2}" fill="#F2EFE6"/><rect x="0" y="0" width="${q}" height="${q}" fill="#D6CEBB"/><rect x="${q}" y="${q}" width="${q}" height="${q}" fill="#D6CEBB"/></pattern></defs>`);
+    o.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="#FBFAF5"/>`);
+
+    // 页眉
+    o.push(`<text class="f" x="${pad}" y="28" font-size="17" font-weight="600" fill="${ink}" letter-spacing="0.6">拼豆图纸</text>`);
+    o.push(`<text class="m" x="${pad}" y="45" font-size="9.5" fill="${ink3}">${items.length} 零件 · ${canvasW} × ${canvasH} 格 · MARD 色盘</text>`);
+    o.push(`<text class="m" x="${W - pad}" y="45" font-size="9.5" fill="${ink3}" text-anchor="end">${totalBeads} 颗 · ${colorList.length} 色</text>`);
+    o.push(`<line x1="${pad}" y1="50" x2="${W - pad}" y2="50" stroke="${ink}" stroke-width="1"/>`);
+
+    // 底板 + 网格
+    o.push(`<rect x="${pad}" y="${headH}" width="${gridW}" height="${gridH}" fill="#FFFFFF"/>`);
+    let d1 = '';
+    for (let x = 0; x <= canvasW; x++) d1 += `M${pad + x * cs + 0.5} ${headH}V${headH + gridH}`;
+    for (let y = 0; y <= canvasH; y++) d1 += `M${pad} ${headH + y * cs + 0.5}H${pad + gridW}`;
+    o.push(`<path d="${d1}" stroke="#EAE5D8" stroke-width="0.6" fill="none"/>`);
+    if (showGrid5) {
+        let d5 = '';
+        for (let x = 0; x <= canvasW; x += 5) d5 += `M${pad + x * cs} ${headH}V${headH + gridH}`;
+        for (let y = 0; y <= canvasH; y += 5) d5 += `M${pad} ${headH + y * cs}H${pad + gridW}`;
+        o.push(`<path d="${d5}" stroke="#A79E8B" stroke-width="1.1" fill="none"/>`);
+    }
+    const tk = 7;
+    o.push(`<path d="M${pad} ${headH + tk}V${headH}H${pad + tk}M${pad + gridW} ${headH + tk}V${headH}H${pad + gridW - tk}M${pad} ${headH + gridH - tk}V${headH + gridH}H${pad + tk}M${pad + gridW} ${headH + gridH - tk}V${headH + gridH}H${pad + gridW - tk}" stroke="${ink}" stroke-width="1" fill="none"/>`);
+
+    // 零件与珠子
+    const cells = [], labels = [];
+    for (const item of items) {
+        const partX = pad + item.layoutX * cs;
+        const partY = headH + item.layoutY * cs;
+        if (showPartNum) {
+            const label = String(item.idx + 1);
+            const bh = 12, bw = Math.max(bh, label.length * 5.4 + 8);
+            o.push(`<rect x="${partX}" y="${partY - bh - 2}" width="${bw}" height="${bh}" fill="${ink}"/>`);
+            o.push(`<text class="m" x="${partX + bw / 2}" y="${partY - bh - 2 + bh / 2 + 3}" font-size="8" font-weight="600" fill="#F7F4EA" text-anchor="middle">${label}</text>`);
+        }
+        for (const [x, y, cidx] of item.flat) {
+            const cm = colorMapping[cidx];
+            const [mr, mg, mb] = cm ? cm.mappedRGB : [200, 200, 200];
+            const code = cm ? (cm.mappedCode || '?') : '?';
+            const isT = TRANSPARENT_CODES.has(code);
+            const vx = partX + x * cs, vy = partY + y * cs;
+            cells.push(`<rect x="${vx}" y="${vy}" width="${cs}" height="${cs}" fill="${isT ? 'url(#chk)' : `rgb(${mr},${mg},${mb})`}"/>`);
+            if (showLabels) {
+                const bright = isT ? 210 : (mr * 299 + mg * 587 + mb * 114) / 1000;
+                const fs = Math.max(6, cs / 2.5).toFixed(1);
+                labels.push(`<text class="m lbl" x="${(vx + cs / 2).toFixed(1)}" y="${(vy + cs / 2 + fs * 0.36).toFixed(1)}" font-size="${fs}" font-weight="600" fill="${bright > 150 ? ink : '#FBFAF5'}" text-anchor="middle">${code}</text>`);
+            }
+        }
+    }
+    o.push(cells.join(''));
+    o.push(labels.join(''));
+
+    // 图例
+    const legendTop = headH + gridH + 26;
+    o.push(`<text class="f" x="${pad}" y="${legendTop}" font-size="10.5" font-weight="600" fill="${ink}">颜色图例</text>`);
+    o.push(`<line x1="${pad + 62}" y1="${legendTop - 4}" x2="${W - pad}" y2="${legendTop - 4}" stroke="#D9D2C1" stroke-width="0.6"/>`);
+    for (let i = 0; i < colorList.length; i++) {
+        const col = i % cols, row = Math.floor(i / cols);
+        const x = pad + col * itemW, y = legendTop + 15 + row * rowH;
+        const [ck, cnt] = colorList[i];
+        const code = codeMap[ck] || '?';
+        if (ck === 'transparent') {
+            o.push(`<rect x="${x}" y="${y}" width="${sw}" height="${sw}" fill="url(#chk)" stroke="rgba(26,25,19,.3)" stroke-width="0.6"/>`);
+        } else {
+            const [cr, cg, cb] = ck.split(',').map(Number);
+            o.push(`<rect x="${x}" y="${y}" width="${sw}" height="${sw}" fill="rgb(${cr},${cg},${cb})" stroke="rgba(26,25,19,.3)" stroke-width="0.6"/>`);
+        }
+        o.push(`<text class="m" x="${x + sw + 6}" y="${(y + sw / 2 + 3.4).toFixed(1)}" font-size="10" font-weight="600" fill="${ink}">${code}</text>`);
+        o.push(`<text class="m" x="${x + itemW - 12}" y="${(y + sw / 2 + 3.2).toFixed(1)}" font-size="9" fill="${ink3}" text-anchor="end">×${cnt}</text>`);
+    }
+    o.push('</svg>');
+    return o.join('');
+}
+
+function applyZoom() {
+    const host = document.getElementById('bpViewport');
+    if (!host) return;
+    const svg = host.querySelector('svg');
+    if (!svg) return;
+    const vb = (svg.getAttribute('viewBox') || '').split(/\s+/);
+    if (vb.length < 4) return;
+    svg.style.width = Math.round(parseFloat(vb[2]) * zoom) + 'px';
+    svg.style.height = Math.round(parseFloat(vb[3]) * zoom) + 'px';
+    host.classList.toggle('hide-labels', zoom < 0.55);
+    const zv = document.getElementById('zoomVal');
+    if (zv) zv.textContent = Math.round(zoom * 100) + '%';
+}
+
+function drawBlueprint() {
+    if (flatComponents.length === 0) return;
+    const host = document.getElementById('bpViewport');
+    if (!host) return;
+    const wrap = document.getElementById('canvasWrap');
+    const sl = wrap ? wrap.scrollLeft : 0, st = wrap ? wrap.scrollTop : 0;
+    host.innerHTML = buildBlueprintSVG(1);
+    applyZoom();
+    if (wrap) { wrap.scrollLeft = sl; wrap.scrollTop = st; }
+    const info = document.getElementById('canvasInfo');
+    if (info) info.innerHTML = `<span>画布 ${lastMeta.canvasW}×${lastMeta.canvasH} 格</span><span>珠子 ${lastMeta.beads} 颗</span><span>颜色 ${lastMeta.colors} 种</span><span>零件 ${lastMeta.parts} 件</span>`;
+    const sc = document.getElementById('statCanvas');
+    if (sc) sc.textContent = `${lastMeta.canvasW}×${lastMeta.canvasH}`;
+}
+
+function fitView() {
+    const wrap = document.getElementById('canvasWrap');
+    if (!wrap || flatComponents.length === 0) return;
+    const svg = document.querySelector('#bpViewport svg');
+    if (!svg) { drawBlueprint(); return; }
+    const vb = (svg.getAttribute('viewBox') || '').split(/\s+/);
+    const w = parseFloat(vb[2]), h = parseFloat(vb[3]);
+    const availW = Math.max(200, wrap.clientWidth - 56);
+    const availH = Math.max(200, wrap.clientHeight - 56);
+    zoom = Math.max(0.2, Math.min(6, Math.min(availW / w, availH / h)));
+    applyZoom();
+    wrap.scrollLeft = 0;
+    wrap.scrollTop = 0;
+}
+
+function zoomIn() { zoom = Math.min(6, zoom * 1.15); applyZoom(); }
+function zoomOut() { zoom = Math.max(0.2, zoom / 1.15); applyZoom(); }
+
+/* ===================== 导出 ===================== */
+function fileName(ext, suffix) {
+    const n = flatComponents.length;
+    return `拼豆图纸_${n}零件${suffix || ''}.${ext}`;
+}
+
+function exportSVG() {
+    if (!flatComponents.length) { toast('先载入模型'); return; }
+    const svgText = buildBlueprintSVG(1);
+    const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName('svg');
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function exportPNG(scale) {
+    scale = scale || 1;
+    if (!flatComponents.length) { toast('先载入模型'); return; }
+    const svgText = buildBlueprintSVG(scale);
+    const img = new Image();
+    img.onload = function () {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth || img.width;
+        c.height = img.naturalHeight || img.height;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#FBFAF5';
+        ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0);
+        const a = document.createElement('a');
+        a.download = fileName('png', scale > 1 ? '_' + scale + 'x' : '');
+        a.href = c.toDataURL('image/png');
+        a.click();
+    };
+    img.onerror = () => toast('PNG 导出失败，可改用 SVG');
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText);
+}
+
+/* ===================== 颜色映射列表 ===================== */
+function updateColorEditor() {
+    const editor = document.getElementById('colorEditor');
+    if (!editor) return;
+    editor.innerHTML = '';
+    const sorted = Object.entries(colorMapping).sort((a, b) => b[1].count - a[1].count);
+
+    for (const [cidx, cm] of sorted) {
+        const row = document.createElement('div');
+        row.className = 'mrow';
+        const currentCode = cm.mappedCode || '';
+        const isT = currentCode === 'H1';
+        const mappedBg = isT ? '#F2EFE6' : (cm.mappedHex || cm.originalHex);
+        const transStyle = isT ? 'background-image:repeating-linear-gradient(-45deg,transparent,transparent 2px,#CFC7B4 2px,#CFC7B4 3px);' : '';
+
+        let opts = `<option value="">—</option>`;
+        for (const code of MARD_CODES) {
+            opts += `<option value="${code}"${code === currentCode ? ' selected' : ''}>${code}</option>`;
+        }
+
+        row.innerHTML =
+            `<span class="swatch" style="background:${cm.originalHex}" title="原始 ${cm.originalHex}"></span>` +
+            `<span class="idx" title="原始 ${cm.originalHex}">${cidx}</span>` +
+            `<span class="arrow">→</span>` +
+            `<span class="swatch" style="background:${mappedBg};${transStyle}" title="MARD ${currentCode || '未匹配'}"></span>` +
+            `<select onchange="updateMapping(${cidx}, this.value, null); updateColorEditor();">${opts}</select>` +
+            `<input type="color" value="${cm.mappedHex || cm.originalHex}" onchange="setCustomColor(${cidx}, this.value); updateColorEditor();">` +
+            `<input class="id-input" value="${currentCode}" placeholder="编号" onchange="updateMapping(${cidx}, null, this.value); updateColorEditor();">` +
+            `<span class="count">${cm.count} 颗</span>`;
+        editor.appendChild(row);
+    }
+}
+
+function updateCellSize() {
+    cellSize = parseInt(document.getElementById('cellSize').value, 10);
+    document.getElementById('cellSizeVal').textContent = cellSize;
+    drawBlueprint();
+}
+function updateGapSize() {
+    gapSize = parseInt(document.getElementById('gapSize').value, 10);
+    document.getElementById('gapVal').textContent = gapSize;
+    drawBlueprint();
+}
+function toggleGrid5() { showGrid5 = !showGrid5; drawBlueprint(); }
+function toggleLabels() { showLabels = !showLabels; drawBlueprint(); }
+function togglePartNum() { showPartNum = !showPartNum; drawBlueprint(); }
+
+/* ===================== 应用逻辑 ===================== */
+function toast(msg) {
+    const el = document.getElementById('toast');
+    if (!el) { alert(msg); return; }
+    el.textContent = msg;
+    el.classList.add('on');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.classList.remove('on'), 2200);
+}
+
+function setStat() {
+    document.getElementById('statParts').textContent = flatComponents.length;
+    document.getElementById('statVoxels').textContent = flatComponents.reduce((s, f) => s + f.flat.length, 0);
+    document.getElementById('statColors').textContent = Object.keys(colorMapping).length;
+}
+
+function showWorkspace(name) {
+    document.getElementById('landing').style.display = 'none';
+    document.getElementById('mainLayout').classList.add('active');
+    document.getElementById('loading').classList.remove('active');
+    const chip = document.getElementById('fileChip');
+    chip.textContent = name;
+    chip.classList.add('on');
+    document.getElementById('reloadBtn').style.display = 'inline-flex';
+    setTimeout(fitView, 40);
+}
+
+function processModel(voxels) {
+    const rawComps = findComponents(voxels);
+    flatComponents = rawComps.map(comp => {
+        const { flat, orient, origSize } = flattenComponent(comp);
+        return { flat, orient, origSize };
+    });
+    initColorMapping();
+    autoMatchAll();
+    setStat();
+}
+
+async function handleFile(file) {
+    if (!file.name.toLowerCase().endsWith('.vox')) { toast('请选择 .vox 文件'); return; }
+    document.getElementById('loading').classList.add('active');
+    try {
+        const buf = await file.arrayBuffer();
+        const result = parseVox(buf);
+        palette = result.palette;
+        let targetModel = null;
+        for (const m of result.models) { if (m.voxels && m.voxels.length > 0) { targetModel = m; break; } }
+        if (!targetModel) throw new Error('未找到体素数据');
+        processModel(targetModel.voxels);
+        showWorkspace(file.name);
+    } catch (err) {
+        document.getElementById('loading').classList.remove('active');
+        toast('解析失败：' + err.message);
+        console.error(err);
+    }
+}
+
+function loadDemo() {
+    const base = { K: [30, 28, 24], G: [212, 120, 70], W: [250, 246, 238], P: [214, 74, 96] };
+    const p = [];
+    for (let i = 0; i < 256; i++) p.push([140, 140, 140, 255]);
+    const idx = {};
+    let n = 1;
+    for (const k in base) { p[n - 1] = base[k].concat([255]); idx[k] = n; n++; }
+    palette = p;
+
+    const art = [
+        '................',
+        '...KK......KK...',
+        '..KGGK....KGGK..',
+        '..KGGGK..KGGGK..',
+        '..KGGGGGGGGGGK..',
+        '.KGGGGGGGGGGGGK.',
+        '.KGWGGGGGGGGWGK.',
+        '.KGWKGGGGGGKWGK.',
+        '.KGGGGGGGGGGGGK.',
+        '..KGGGPPPPGGGK..',
+        '..KGGGGGGGGGGK..',
+        '...KGGGGGGGGK...',
+        '....KKKKKKKK....'
+    ];
+    const fish = ['..KKKK.', '.KGGGGK', 'KGGGGGK', '.KGGGGK', '..KKKK.'];
+
+    const voxels = [];
+    for (let z = 0; z < 2; z++) {
+        for (let y = 0; y < art.length; y++) {
+            for (let x = 0; x < art[y].length; x++) {
+                const ch = art[y][x];
+                if (ch === '.') continue;
+                voxels.push([x, y, z, idx[ch]]);
+            }
+        }
+        for (let y = 0; y < fish.length; y++) {
+            for (let x = 0; x < fish[y].length; x++) {
+                const ch = fish[y][x];
+                if (ch === '.') continue;
+                voxels.push([22 + x, 4 + y, z, idx[ch === 'K' ? 'K' : 'G']]);
+            }
+        }
+    }
+    processModel(voxels);
+    showWorkspace('示例 · 拼豆猫');
+}
+
+/* ===================== 交互 ===================== */
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+uploadZone.addEventListener('click', e => {
+    if (e.target.closest('button')) return;
+    fileInput.click();
+});
+['dragenter', 'dragover'].forEach(ev => uploadZone.addEventListener(ev, e => {
+    e.preventDefault();
+    uploadZone.classList.add('over');
+}));
+['dragleave', 'drop'].forEach(ev => uploadZone.addEventListener(ev, e => {
+    e.preventDefault();
+    if (ev === 'dragleave' && uploadZone.contains(e.relatedTarget)) return;
+    uploadZone.classList.remove('over');
+}));
+uploadZone.addEventListener('drop', e => {
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+    if (e.target.files.length) handleFile(e.target.files[0]);
+    e.target.value = '';
+});
+
+const canvasWrap = document.getElementById('canvasWrap');
+canvasWrap.addEventListener('wheel', e => {
+    if (!flatComponents.length) return;
+    e.preventDefault();
+    const rect = canvasWrap.getBoundingClientRect();
+    const px = e.clientX - rect.left, py = e.clientY - rect.top;
+    const cx = canvasWrap.scrollLeft + px, cy = canvasWrap.scrollTop + py;
+    const nz = Math.max(0.2, Math.min(6, zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12)));
+    if (nz === zoom) return;
+    const k = nz / zoom;
+    zoom = nz;
+    applyZoom();
+    canvasWrap.scrollLeft = cx * k - px;
+    canvasWrap.scrollTop = cy * k - py;
+}, { passive: false });
+
+let dragging = false, dragX = 0, dragY = 0, dragL = 0, dragT = 0;
+canvasWrap.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || !flatComponents.length) return;
+    dragging = true;
+    dragX = e.clientX; dragY = e.clientY;
+    dragL = canvasWrap.scrollLeft; dragT = canvasWrap.scrollTop;
+    canvasWrap.classList.add('dragging');
+    canvasWrap.setPointerCapture(e.pointerId);
+});
+canvasWrap.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    canvasWrap.scrollLeft = dragL - (e.clientX - dragX);
+    canvasWrap.scrollTop = dragT - (e.clientY - dragY);
+});
+['pointerup', 'pointercancel'].forEach(ev => canvasWrap.addEventListener(ev, () => {
+    dragging = false;
+    canvasWrap.classList.remove('dragging');
+}));
+canvasWrap.addEventListener('dblclick', () => fitView());
+window.addEventListener('resize', () => { if (flatComponents.length) applyZoom(); });
+
+console.log('拼豆图纸工作台 · SVG 矢量版 · MARD 221 色');
+if (location.search.indexOf('demo') >= 0) setTimeout(loadDemo, 80);
+</script>
+</body>
+</html>
